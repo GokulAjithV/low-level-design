@@ -200,4 +200,4 @@ if __name__ == "__main__":
 
     print("\n--- Processing Exit ---")
     # 4. Vehicles Exit after hours spent
-    parking_lot.unpark_vehicle(ticket_1.ticket_id, hours_spent=3.5)
+    parking_lot.unpark_vehicle(ticket_1.ticket_id, hours_spent=3.5) 

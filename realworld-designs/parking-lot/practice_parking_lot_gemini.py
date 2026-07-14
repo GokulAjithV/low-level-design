@@ -56,15 +56,15 @@ class ParkingFloor:
             self.spots[spot.spot_id] = spot
 
     def get_available_spot(self, spot_type: SpotType):
-        for spot in self.spots:
+        for spot in self.spots.values():
             if spot.is_free and spot.spot_type == spot_type:
                 return spot
         print(f"No Available spots in floor {self.floor_id}")
 
     def get_available_spots(self, spot_type: SpotType) -> list[ParkingSpot]:
         available_spots = []
-        for spot in self.spots:
-            if spot.is_free and spot.spot_type == spot_type:
+        for spot in self.spots.values():
+            if spot and spot.is_free and spot.spot_type == spot_type:
                 available_spots.append(spot)
         return available_spots
 
@@ -102,8 +102,8 @@ class CarPricingStrategy(PricingStrategy):
         return max(50.0, 30.0 * hours) # min Rs.50, then Rs.30/hour
  
 class MotorcyclePricingStrategy(PricingStrategy):
-    def calcualte_cost(self, hours: float) -> float:
-        return max(20, 10.0 * hours)
+    def calculate_cost(self, hours: float) -> float:
+        return max(20.0, 10.0 * hours)
 
 # Factory to dynamically fetch the correct pricing scheme 
 class PricingStrategyFactory:
@@ -113,7 +113,7 @@ class PricingStrategyFactory:
             VehicleType.MOTORCYCLE: MotorcyclePricingStrategy,
             VehicleType.CAR: CarPricingStrategy
         }
-        return strategies.get(vehicle_type, MotorcyclePricingStrategy)
+        return strategies.get(vehicle_type, MotorcyclePricingStrategy)()
 
 """
 5. Ticketing System
@@ -124,9 +124,9 @@ class Ticket:
         self.ticket_id = str(uuid.uuid4())
         self.vehicle = vehicle
         self.spot = spot
-        self.entry_time = datetime.now()
-        self.exit_time = None
-        self.amount_paid = 0.0
+        self.entry_time: datetime = datetime.now()
+        self.exit_time: datetime = None
+        self.amount_paid: float = 0.0
 
 class TicketManager:
     def __init__(self):
@@ -173,7 +173,7 @@ class ParkingLot:
 
     def park_vehicle(self, vehicle: Vehicle):
         spot_type = self._map_vehicle_to_spot_type(vehicle.vehicle_type)
-        spot = SpotAllocationStrategy.find_spot(self.floors, spot_type)
+        spot = self.spot_allocation_strategy.find_spot(self.floors, spot_type)
 
         if not spot:
             print(f"Parking Lot is full for vehicle type: {vehicle.vehicle_type.name}")
@@ -184,6 +184,53 @@ class ParkingLot:
         print(f"Parking Spot alloted for vehicle - {vehicle.license_plate} | Spot ID - {spot.spot_id} | Floor ID - {spot.floor_id} | Ticket - {ticket.ticket_id}")
         return ticket
 
-    def unpark_vehicle(self, ticket, vehicle):
-        pass
+    def unpark_vehicle(self, ticket_id: str):
+        ticket = self.ticket_manager.active_tickets.get(ticket_id)
+        
+        if not ticket:
+            print(f"Ticket not found or invalid ticket ID - {ticket_id}")
+            return 
+
+        ticket.spot.remove_vehicle()
+        vehicle_type = ticket.vehicle.vehicle_type
+        pricing_strategy = PricingStrategyFactory.get_strategy(vehicle_type)
+        ticket.exit_time = datetime.now()
+        hours_spent = (ticket.exit_time - ticket.entry_time).total_seconds() / 3600.0
+        ticket.amount_paid = pricing_strategy.calculate_cost(hours=hours_spent)
+        self.ticket_manager.close_ticket(ticket_id)
+        
+        return ticket.amount_paid
+
+if __name__ == "__main__":
+    
+    # 1. Initialize system with an allocation strategy
+    parking_lot = ParkingLot("MS Dhoni Parking Lot", NearestSpotAllocationStrategy())
+
+    # 2. Setup infrastructure (floor 0 containing spots)
+    floor_0 = ParkingFloor(floor_id=0)
+
+    for i in range(1, 6):
+        spot1 = ParkingSpot(f"S-{i}", SpotType.MOTORCYCLE, floor_id=0)
+        spot2 = ParkingSpot(f"S-{5+i}", SpotType.COMPACT, floor_id=0)
+        floor_0.add_spots([spot1, spot2])
+    
+    parking_lot.add_floor(floor_0)
+
+    print(f"Welcome to {parking_lot.name}")
+    
+    # 3. Vehicles Arrive
+    tickets = []
+    for i in range(1, 6):
+        bike = Vehicle(f"TN-97-U-596{i}", VehicleType.MOTORCYCLE)
+        tickets.append(parking_lot.park_vehicle(bike))
+    
+    # Parking lot full (shoule throw error message)
+    parking_lot.park_vehicle(Vehicle(f"TN-97-U-5966", VehicleType.MOTORCYCLE)) # parking lot full (should throw error message)
+    
+    tickets.append(parking_lot.park_vehicle(Vehicle(f"TN-97-U-5911", VehicleType.CAR)))
+
+    # 4. Vehicles exit after hours 
+
+    for ticket in tickets:
+        parking_lot.unpark_vehicle(ticket.ticket_id)
 
