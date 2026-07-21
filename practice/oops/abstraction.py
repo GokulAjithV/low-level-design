@@ -30,7 +30,8 @@ class PaytmGateway(PaymentGateway):
 gateway = RazorpayGateway()
 gateway.pay(500)
 
-# 2. Data Abstraction
+# 2. Data Abstraction - It is called Encapsulation (where you wrap data and methods in a class 
+# and protect its internal details by controlled access through getters and setters)
 
 class BankAccount:
 
