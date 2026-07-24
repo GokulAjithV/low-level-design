@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from enum import Enum
 
 class ItemType(Enum):
@@ -35,7 +35,7 @@ class InventorySlot:
         self.quantity = quantity
         machine.item_slot_mappings[item.item_code] = self.slot_id
 
-class State:
+class State(ABC):
     @abstractmethod
     def select_item(self, machine, item_code):
         pass
