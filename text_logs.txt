@@ -1,0 +1,7 @@
+[07-27-2026 17:47:45] [Error uploading invoice] [4]
+[07-27-2026 17:52:21] [ERROR] [Error uploading invoice]
+[07-27-2026 17:53:40] [ERROR] [Error uploading invoice]
+[07-27-2026 17:56:03] [INFO] [Gokul Ajith logged in!]
+[07-27-2026 17:56:03] [ERROR] [Error uploading invoice]
+[07-27-2026 17:56:21] [INFO] [Gokul Ajith logged in!]
+[07-27-2026 17:56:21] [ERROR] [Error uploading invoice]
