@@ -7,12 +7,6 @@ class LogLevel(IntEnum):
     INFO = 2
     WARN = 3
     ERROR = 4
-    
-
-class LogMessage:
-    def __init__(self, message: str, log_level: LogLevel):
-        self.message = message
-        self.log_level = log_level
 
 class LogAppender(ABC):
     @abstractmethod
@@ -75,9 +69,14 @@ class FileHandler(LogHandler):
         self.appender.append(message)
 
 class Logger:
-    def __init__(self, formatter: LogFormatter):
-        self.formatter = formatter
-        self.handler_chain = None
+    __instance = None
+
+    def __new__(cls, formatter: LogFormatter):
+        if not cls.__instance:
+            cls.__instance = super().__new__(cls)
+            cls.formatter = formatter
+            cls.handler_chain = None
+        return cls.__instance
 
     def set_handler_chain(self, handler: LogHandler):
         self.handler_chain = handler
@@ -110,3 +109,5 @@ if __name__ == "__main__":
 
     logger.log_info("Gokul Ajith logged in!")
     logger.log_error("Error uploading invoice")
+
+    logger = Logger(PlainTextFormatter())
